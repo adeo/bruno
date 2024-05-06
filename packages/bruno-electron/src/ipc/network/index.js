@@ -341,7 +341,9 @@ const registerNetworkIpc = (mainWindow) => {
     }
 
     // interpolate variables inside request
-    interpolateVars(request, envVars, collectionVariables, processEnvVars, collectionPath, secretsConfig);
+    console.log('log before interpolateVars');
+    await interpolateVars(request, envVars, collectionVariables, processEnvVars, collectionPath, secretsConfig);
+    console.log('log after interpolateVars');
 
     // if this is a graphql request, parse the variables, only after interpolation
     // https://github.com/usebruno/bruno/issues/884
@@ -490,7 +492,7 @@ const registerNetworkIpc = (mainWindow) => {
         scriptingConfig,
         secretsConfig
       );
-
+      console.log('log after runPreRequest', request.url);
       const axiosInstance = await configureRequest(
         collectionUid,
         request,

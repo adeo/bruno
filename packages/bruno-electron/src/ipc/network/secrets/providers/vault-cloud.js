@@ -2,7 +2,6 @@
 const { ipcMain } = require('electron');
 
 const SecretsInstanceStore = require('../../../../store/secrets-instance');
-const { makeAxiosInstance } = require('../../axios-instance');
 const { simpleFetch } = require('./utils');
 // const { simpleFetch } = require('./index');
 
@@ -25,12 +24,14 @@ class VaultCloud {
       audience: 'https://api.hashicorp.cloud'
     };
     try {
+      console.log('before fetching the token');
       const result = await simpleFetch({
         url,
         method: 'POST',
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body
       });
+      console.log('the result token is', result);
       this.token = result?.access_token;
       return result?.access_token;
     } catch (error) {
@@ -51,11 +52,14 @@ class VaultCloud {
   // Function to handle token management and data retrieval
   async fetchSecretData(config, collectionPath, key, token) {
     const url = `https://api.cloud.hashicorp.com/secrets/2023-06-13/organizations/${config.orgID}/projects/${config.projectID}/apps/${config.appName}/open`;
+    console.log('the url is', url);
     if (token) {
-      const { data } = await this.fetchDataWithAuth(url, token);
-      return data?.[key];
+      const data = await this.fetchDataWithAuth(url, token);
+      const value = data?.secrets?.find((secret) => secret.name === key);
+      return value?.version?.value;
     }
     // If token is not provided, retrieve a new token and fetch data
+    console.log('no token provided, fetching a new token');
     const newToken = await this.getToken(config, collectionPath);
     console.log('a new token has been collected', newToken);
     const data = await this.fetchDataWithAuth(url, newToken);
@@ -73,10 +77,10 @@ class VaultCloud {
     console.log('the token is', this.token, !!this.token);
     if (!this.token) {
       // If no token available, fetch data with token management handled internally
-      return this.fetchSecretData(config, collectionPath, key);
+      return await this.fetchSecretData(config, collectionPath, key);
     } else {
       // If token available, fetch data directly with the existing token
-      return this.fetchSecretData(config, collectionPath, key, this.token);
+      return await this.fetchSecretData(config, collectionPath, key, this.token);
     }
   }
 

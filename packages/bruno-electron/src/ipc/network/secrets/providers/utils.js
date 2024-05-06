@@ -9,6 +9,7 @@ const simpleFetch = async ({ url, method, headers, body }) => {
       data: body
     })
       .then((response) => {
+        console.log('the response inside simpleFetch', response?.data);
         resolve(response?.data || response);
       })
       .catch((err) => {

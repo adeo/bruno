@@ -2,7 +2,7 @@
 
 const { each, forOwn, cloneDeep } = require('lodash');
 const { interpolateSecrets } = require('./secrets/interpolate-secrets');
-const { interpolate } = require('./secrets/dirty-interpolate');
+const { interpolate, interpolateAsync } = require('./secrets/dirty-interpolate');
 
 const getContentType = (headers = {}) => {
   let contentType = '';
@@ -15,7 +15,7 @@ const getContentType = (headers = {}) => {
   return contentType;
 };
 
-const interpolateVars = (
+const interpolateVars = async (
   request,
   envVars = {},
   collectionVariables = {},
@@ -53,14 +53,18 @@ const interpolateVars = (
         }
       }
     };
-    const secretsCallback = (match) => {
-      return interpolateSecrets(match, secretsConfig, collectionPath);
+    const secretsCallback = async (match) => {
+      console.log('here we are in the secrets callback', match);
+      return await interpolateSecrets(match, secretsConfig, collectionPath);
     };
-    return secretsConfig && collectionPath && str.includes('$secret')
-      ? interpolate(str, combinedVars, secretsCallback)
-      : interpolate(str, combinedVars);
+    const test =
+      secretsConfig && collectionPath && str.includes('$secret')
+        ? await interpolateAsync(str, combinedVars, secretsCallback)
+        : interpolate(str, combinedVars);
+    console.log('this is what we get', test);
+    return test;
   };
-  request.url = _interpolate(request.url);
+  request.url = await _interpolate(request.url);
   console.log('the result is this', request.url);
   forOwn(request.headers, (value, key) => {
     delete request.headers[key];
